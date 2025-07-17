@@ -15,3 +15,22 @@ Currently only parses the Summary PDF of 510(k) submissions (Submission Number K
 python main.py # modify regex for key word searching
 # outputs new .xlsx
 ```
+### Modifications
+Specify product codes of interest (set to empty list if parsing all) and naming variables
+```python
+product_codes = ['QAS', 'QBS', 'QDQ', 'QFM']
+custom_flag = 'Peds_Flag'
+save_name = 'list_with_peds_CAD_codes.xlsx'
+```
+
+Modify regex for search parameters. Example below for pediatric indications:
+```python
+if re.search(r'\bnot intended\b(?:\W+\w+){1,5}?\W+\bpediatric\b', text, flags=re.IGNORECASE) is not None:
+    print(str(index)+'/'+str(len(df))+': '+k_number + ', explicitly not intended')
+    hit_count[index] = -1
+
+if hit_count[index] == 1:
+    print(str(index)+'/'+str(len(df))+': '+k_number + ' likely intended for pediatric or children')
+elif hit_count[index] == 0:
+    print(str(index)+'/'+str(len(df))+': '+k_number + ', no mention')
+```
