@@ -8,6 +8,10 @@ from pypdf import PdfReader
 import random
 import time
 
+product_codes = ['QAS', 'QBS', 'QDQ', 'QFM']
+custom_flag = 'Peds_Flag'
+save_name = 'list_with_peds_CAD_codes.xlsx'
+
 # Need to use openpyxl to read xlsx as pandas/csv doesn't support hyperlinks
 wb = openpyxl.load_workbook('ai-ml-enabled-devices-excel.xlsx')
 sheet = wb.active
@@ -17,7 +21,10 @@ data = list(sheet.iter_rows(values_only=True))
 # convert to dataframe
 df = pd.DataFrame(data[1:], columns=data[0])
 
-peds_count = [None] * len(df.index)
+if len(product_codes) != 0:
+    df = df[df['Primary Product Code'].isin(product_codes)].reset_index()
+
+hit_count = [None] * len(df.index)
 for index, row in df.iterrows():
     
     #extract hyperlink url and submission k-number
@@ -56,32 +63,38 @@ for index, row in df.iterrows():
                         for page in reader.pages:
                             text += page.extract_text()
 
-                        # NLP w/ LLM could be used here in place of regex
-
-                        # search Summary PDF for specific terms
+                        # search Summary PDF for specific terms (NLP w/ LLM could be used here in place of regex)
                         if re.findall(r" pediatric|children", text, re.IGNORECASE):
-                            print(str(index)+'/'+str(len(df))+': '+k_number + ' mentions pediatric or children')
-                            peds_count[index] = 1
-                        else:
-                            print(str(index)+'/'+str(len(df))+': '+k_number + ', no peds')
-                            peds_count[index] = 0
+                            hit_count[index] = 1
+                        else: hit_count[index] = 0
+
+                        # search for a more specific regex and override to 0 if not intended
+                        if re.search(r'\bnot intended\b(?:\W+\w+){1,5}?\W+\bpediatric\b', text, flags=re.IGNORECASE) is not None:
+                            print(str(index)+'/'+str(len(df))+': '+k_number + ', explicitly not intended')
+                            hit_count[index] = -1
+
+                        if hit_count[index] == 1:
+                            print(str(index)+'/'+str(len(df))+': '+k_number + ' likely intended for pediatric or children')
+                        elif hit_count[index] == 0:
+                            print(str(index)+'/'+str(len(df))+': '+k_number + ', no mention')
+
                     except:
                         print('Cannot read PDF')
-                        peds_count[index] = 999
+                        hit_count[index] = 999
                 else:
                     print('Non-Summary document detected')
-                    peds_count[index] = 999
+                    hit_count[index] = 999
 
                 # Delete temporary PDF
                 if os.path.exists(k_number+".pdf"):
                     os.remove(k_number+".pdf")
     else:
         print('Non-K-Sub')
-        peds_count[index] = 999
+        hit_count[index] = 999
     
 print('Add column and save new Excel')
-df.insert(len(df.columns), 'Peds_Flag', peds_count)
-df.to_excel('list_with_peds.xlsx', index=False)
+df.insert(len(df.columns), custom_flag, hit_count)
+df.to_excel(save_name, index=False)
 
     
 
