@@ -25,6 +25,12 @@ save_name = 'list_with_peds_CAD_codes.xlsx'
 
 Modify regex for search parameters. Example below for pediatric indications:
 ```python
+# search Summary PDF for specific terms (NLP w/ LLM could be used here in place of regex)
+if re.findall(r" pediatric|children", text, re.IGNORECASE):
+    hit_count[index] = 1
+else: hit_count[index] = 0
+
+# search for a more specific regex and override to 0 if not intended
 if re.search(r'\bnot intended\b(?:\W+\w+){1,5}?\W+\bpediatric\b', text, flags=re.IGNORECASE) is not None:
     print(str(index)+'/'+str(len(df))+': '+k_number + ', explicitly not intended')
     hit_count[index] = -1
