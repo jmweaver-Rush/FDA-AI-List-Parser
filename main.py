@@ -75,6 +75,10 @@ for index, row in df.iterrows():
                             if re.search(r'\bnot intended\b(?:\W+\w+){1,5}?\W+\bpediatric\b', text, flags=re.IGNORECASE) is not None:
                                 print(str(index)+'/'+str(len(df))+': '+k_number + ', explicitly not intended')
                                 hit_count[index] = -1
+                            
+                            if re.search(r'\bexclud(?:e|ed|ing)\s+pediatrics?\b', text, flags=re.IGNORECASE) is not None:
+                                print(str(index)+'/'+str(len(df))+': '+k_number + ', explicitly not intended')
+                                hit_count[index] = -1
 
                             if hit_count[index] == 1:
                                 print(str(index)+'/'+str(len(df))+': '+k_number + ' likely intended for pediatric or children')
