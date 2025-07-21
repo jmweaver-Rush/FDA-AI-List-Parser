@@ -8,9 +8,11 @@ from pypdf import PdfReader
 import random
 import time
 
-product_codes = ['QAS', 'QBS', 'QDQ', 'QFM']
-custom_flag = 'Peds_Flag'
+product_codes = ['POK', 'QAS', 'QBS', 'QDQ', 'QFM']
+custom_flag = 'peds_Flag'
 save_name = 'list_with_peds_CAD_codes.xlsx'
+
+example = 'pediatric' #'pediatric', 'hemorrhage', or 'pneumothorax'
 
 # Need to use openpyxl to read xlsx as pandas/csv doesn't support hyperlinks
 wb = openpyxl.load_workbook('ai-ml-enabled-devices-excel.xlsx')
@@ -64,19 +66,34 @@ for index, row in df.iterrows():
                             text += page.extract_text()
 
                         # search Summary PDF for specific terms (NLP w/ LLM could be used here in place of regex)
-                        if re.findall(r" pediatric|children", text, re.IGNORECASE):
-                            hit_count[index] = 1
-                        else: hit_count[index] = 0
+                        if example == 'pediatric':
+                            if re.findall(r" pediatric|children", text, re.IGNORECASE):
+                                hit_count[index] = 1
+                            else: hit_count[index] = 0
 
-                        # search for a more specific regex and override to 0 if not intended
-                        if re.search(r'\bnot intended\b(?:\W+\w+){1,5}?\W+\bpediatric\b', text, flags=re.IGNORECASE) is not None:
-                            print(str(index)+'/'+str(len(df))+': '+k_number + ', explicitly not intended')
-                            hit_count[index] = -1
+                            # search for a more specific regex and override to 0 if not intended
+                            if re.search(r'\bnot intended\b(?:\W+\w+){1,5}?\W+\bpediatric\b', text, flags=re.IGNORECASE) is not None:
+                                print(str(index)+'/'+str(len(df))+': '+k_number + ', explicitly not intended')
+                                hit_count[index] = -1
 
-                        if hit_count[index] == 1:
-                            print(str(index)+'/'+str(len(df))+': '+k_number + ' likely intended for pediatric or children')
-                        elif hit_count[index] == 0:
-                            print(str(index)+'/'+str(len(df))+': '+k_number + ', no mention')
+                            if hit_count[index] == 1:
+                                print(str(index)+'/'+str(len(df))+': '+k_number + ' likely intended for pediatric or children')
+                            elif hit_count[index] == 0:
+                                print(str(index)+'/'+str(len(df))+': '+k_number + ', no mention')
+
+                        if example == 'hemorrhage':
+                            if re.findall(r"hemorrhage", text, re.IGNORECASE):
+                                print(str(index)+'/'+str(len(df))+': '+k_number + ', hit for '+example)
+                                hit_count[index] = 1
+                            else:
+                                hit_count[index] = 0
+
+                        if example == 'pneumothorax':
+                            if re.findall(r"pneumothorax", text, re.IGNORECASE):
+                                print(str(index)+'/'+str(len(df))+': '+k_number + ', hit for '+example)
+                                hit_count[index] = 1
+                            else:
+                                hit_count[index] = 0
 
                     except:
                         print('Cannot read PDF')
